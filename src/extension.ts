@@ -121,13 +121,33 @@ async function handleAutoInsert(
       continue;
     }
 
-    const matches: { index: number; attribute: string }[] = [];
+    const matches: {
+      index?: number;
+      attribute: string;
+      position?: vscode.Position;
+    }[] = [];
     let match: RegExpExecArray | null;
     while ((match = attributePattern.exec(change.text)) !== null) {
       matches.push({
         index: match.index,
         attribute: match[1]
       });
+    }
+
+    if (!matches.length) {
+      const insertPosition = document.positionAt(
+        document.offsetAt(change.range.start) + change.text.length
+      );
+      const emptyAttribute = getEmptyAttributeAtPosition(
+        document,
+        insertPosition
+      );
+      if (emptyAttribute) {
+        matches.push({
+          attribute: emptyAttribute.attribute,
+          position: emptyAttribute.insertPosition
+        });
+      }
     }
 
     if (!matches.length) {
@@ -138,13 +158,19 @@ async function handleAutoInsert(
 
     isAutoInsertInProgress = true;
     await editor.edit((editBuilder) => {
-      for (const item of matches.sort((a, b) => b.index - a.index)) {
-        const insertOffset =
-          document.offsetAt(change.range.start) +
-          item.index +
-          `${item.attribute}=`.length +
-          1;
-        const insertPosition = document.positionAt(insertOffset);
+      const sortedMatches = matches
+        .filter((item) => item.index !== undefined)
+        .sort((a, b) => (b.index ?? 0) - (a.index ?? 0));
+      const directMatches = matches.filter((item) => item.position);
+      for (const item of [...sortedMatches, ...directMatches]) {
+        const insertPosition = item.position
+          ? item.position
+          : document.positionAt(
+              document.offsetAt(change.range.start) +
+                (item.index ?? 0) +
+                `${item.attribute}=`.length +
+                1
+            );
         const tagPrefix =
           autoPrefixMode === "element"
             ? getTagNameBeforePosition(document, insertPosition) || autoPrefix
@@ -165,6 +191,30 @@ function getTagNameBeforePosition(
   const text = document.getText(new vscode.Range(start, position));
   const match = /<([a-zA-Z][\w:-]*)[^>]*$/.exec(text);
   return match?.[1];
+}
+
+function getEmptyAttributeAtPosition(
+  document: vscode.TextDocument,
+  position: vscode.Position
+): { attribute: string; insertPosition: vscode.Position } | undefined {
+  const line = document.lineAt(position.line).text;
+  const charIndex = position.character;
+  if (charIndex <= 0 || charIndex >= line.length) {
+    return undefined;
+  }
+
+  const quote = line[charIndex];
+  if ((quote !== '"' && quote !== "'") || line[charIndex - 1] !== quote) {
+    return undefined;
+  }
+
+  const beforeQuote = line.slice(0, charIndex - 1);
+  const match = /(?:^|\s)(class|className|id)\s*=\s*$/.exec(beforeQuote);
+  if (!match) {
+    return undefined;
+  }
+
+  return { attribute: match[1], insertPosition: position };
 }
 
 export function activate(context: vscode.ExtensionContext) {

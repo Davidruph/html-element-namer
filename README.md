@@ -5,7 +5,7 @@ Auto-generate unique class/id names for HTML elements and provide CSS selector a
 ## Features
 
 - Generate unique class/id names from a command.
-- Auto-insert class/id names when you type an empty class="" or id="" attribute.
+- Auto-insert class/id names when you type an empty class="" / className="" or id="" attribute.
 - Use HTML tag names as the prefix (optional).
 - CSS/SCSS/LESS autocomplete for class and id selectors.
 - Emmet-style completions in HTML/JSX/TSX/Vue (e.g., `div.` or `section#`).
@@ -20,7 +20,7 @@ Auto-generate unique class/id names for HTML elements and provide CSS selector a
 ### Auto-generate names while typing
 
 1. Enable the setting `html-element-namer.autoGenerate`.
-2. Type `class=""` or `id=""` in HTML/JSX/TSX/Vue.
+2. Type `class=""`, `className=""` (React), or `id=""` in HTML/JSX/TSX/Vue.
 3. A unique name is inserted automatically.
 
 ## Extension Settings

@@ -4,7 +4,7 @@
   "name": "html-element-namer",
   "displayName": "HTML Element Namer",
   "description": "Auto-generate unique class/id names for HTML elements and provide CSS class/id autocomplete",
-  "version": "0.0.3",
+  "version": "0.0.4",
   "repository": {
     "type": "git",
     "url": "https://github.com/Davidruph/autonaming-component.git"
@@ -19,6 +19,8 @@
     "onLanguage:html",
     "onLanguage:jsx",
     "onLanguage:tsx",
+    "onLanguage:javascriptreact",
+    "onLanguage:typescriptreact",
     "onLanguage:vue",
     "onLanguage:css",
     "onLanguage:scss",
@@ -67,7 +69,7 @@
         "command": "html-element-namer.generateUniqueName",
         "key": "ctrl+shift+g",
         "mac": "cmd+shift+g",
-        "when": "editorLangId == html || editorLangId == jsx || editorLangId == tsx || editorLangId == vue"
+        "when": "editorLangId == html || editorLangId == jsx || editorLangId == tsx || editorLangId == javascriptreact || editorLangId == typescriptreact || editorLangId == vue"
       }
     ]
   },
