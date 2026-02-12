@@ -15,7 +15,11 @@ async function generateUniqueClassName() {
   }
 
   const document = editor.document;
-  if (!document.languageId.match(/html|jsx|tsx|vue/)) {
+  if (
+    !document.languageId.match(
+      /html|jsx|tsx|vue|javascriptreact|typescriptreact/
+    )
+  ) {
     vscode.window.showErrorMessage(
       "This command only works in HTML/JSX/Vue files"
     );
@@ -100,25 +104,29 @@ async function handleAutoInsert(
     return;
   }
 
-  if (!document.languageId.match(/html|jsx|tsx|vue/)) {
+  if (
+    !document.languageId.match(
+      /html|jsx|tsx|vue|javascriptreact|typescriptreact/
+    )
+  ) {
     return;
   }
 
   const autoPrefix = config.get<string>("autoPrefix", "elem") || "elem";
   const autoPrefixMode = config.get<string>("autoPrefixMode", "fixed");
-  const attributePattern = /(class|id)=(['"])\2/g;
+  const attributePattern = /(class|className|id)=(['"])\2/g;
 
   for (const change of event.contentChanges) {
     if (!change.text) {
       continue;
     }
 
-    const matches: { index: number; attribute: "class" | "id" }[] = [];
+    const matches: { index: number; attribute: string }[] = [];
     let match: RegExpExecArray | null;
     while ((match = attributePattern.exec(change.text)) !== null) {
       matches.push({
         index: match.index,
-        attribute: match[1] === "class" ? "class" : "id"
+        attribute: match[1]
       });
     }
 
@@ -200,8 +208,8 @@ export function activate(context: vscode.ExtensionContext) {
   const emmetProvider = vscode.languages.registerCompletionItemProvider(
     [
       { language: "html", scheme: "file" },
-      { language: "jsx", scheme: "file" },
-      { language: "tsx", scheme: "file" },
+      { language: "javascriptreact", scheme: "file" },
+      { language: "typescriptreact", scheme: "file" },
       { language: "vue", scheme: "file" }
     ],
     new EmmetCompletionProvider(),

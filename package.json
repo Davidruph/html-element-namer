@@ -4,7 +4,7 @@
   "name": "html-element-namer",
   "displayName": "HTML Element Namer",
   "description": "Auto-generate unique class/id names for HTML elements and provide CSS class/id autocomplete",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "repository": {
     "type": "git",
     "url": "https://github.com/Davidruph/autonaming-component.git"
