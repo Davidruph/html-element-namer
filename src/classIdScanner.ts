@@ -18,7 +18,7 @@ export class ClassIdScanner {
    */
   async scanWorkspace(): Promise<ClassOrIdMatch[]> {
     const results: ClassOrIdMatch[] = [];
-    const classIdPattern = /(?:class|id)=["']([^"']+)["']/g;
+    const classIdPattern = /(?:class|className|id)=["']([^"']+)["']/g;
     const files = await vscode.workspace.findFiles(
       "**/*.{html,jsx,tsx,vue}",
       "**/node_modules/**"
@@ -49,7 +49,7 @@ export class ClassIdScanner {
         } else {
           results.push({
             name: content,
-            type: match[0].includes("class") ? "class" : "id",
+            type: match[0].includes("id=") ? "id" : "class",
             file: relativePath,
             line: line + 1
           });

@@ -2,6 +2,7 @@ import * as vscode from "vscode";
 import { nameGenerator } from "./nameGenerator";
 import { classIdScanner } from "./classIdScanner";
 import { CSSCompletionProvider } from "./cssCompletionProvider";
+import { EmmetCompletionProvider } from "./emmetCompletionProvider";
 
 /**
  * Generate a unique class name and insert it into HTML
@@ -196,6 +197,18 @@ export function activate(context: vscode.ExtensionContext) {
     "#"
   );
 
+  const emmetProvider = vscode.languages.registerCompletionItemProvider(
+    [
+      { language: "html", scheme: "file" },
+      { language: "jsx", scheme: "file" },
+      { language: "tsx", scheme: "file" },
+      { language: "vue", scheme: "file" }
+    ],
+    new EmmetCompletionProvider(),
+    ".",
+    "#"
+  );
+
   // File system watcher to refresh on changes
   const watcher = vscode.workspace.createFileSystemWatcher(
     "**/*.{html,jsx,tsx,vue}"
@@ -227,6 +240,7 @@ export function activate(context: vscode.ExtensionContext) {
     cssProvider,
     scssProvider,
     lessProvider,
+    emmetProvider,
     watcher,
     autoInsert
   );

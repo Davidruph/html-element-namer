@@ -13,14 +13,23 @@ export class CSSCompletionProvider implements vscode.CompletionItemProvider {
   ): Promise<vscode.CompletionItem[] | vscode.CompletionList | undefined> {
     const line = document.lineAt(position.line).text;
     const beforeCursor = line.substring(0, position.character);
+    const classMatch = /\.([\w-]*)$/.exec(beforeCursor);
+    const idMatch = /#([\w-]*)$/.exec(beforeCursor);
 
-    // Check if we're typing a class or id selector
-    const isClassSelector = beforeCursor.match(/\.$/) !== null;
-    const isIdSelector = beforeCursor.match(/#$/) !== null;
+    const isClassSelector = classMatch !== null;
+    const isIdSelector = idMatch !== null;
 
     if (!isClassSelector && !isIdSelector) {
       return undefined;
     }
+
+    const replaceLength = isClassSelector
+      ? (classMatch?.[1]?.length ?? 0)
+      : (idMatch?.[1]?.length ?? 0);
+    const replaceRange = new vscode.Range(
+      position.translate(0, -replaceLength),
+      position
+    );
 
     try {
       const items = await classIdScanner.getClassesAndIds();
@@ -42,6 +51,7 @@ export class CSSCompletionProvider implements vscode.CompletionItemProvider {
               `**File:** ${cls.file}\n\n**Line:** ${cls.line}`
             );
             item.insertText = cls.name;
+            item.range = replaceRange;
             uniqueClasses.set(cls.name, item);
           }
         });
@@ -63,6 +73,7 @@ export class CSSCompletionProvider implements vscode.CompletionItemProvider {
               `**File:** ${id.file}\n\n**Line:** ${id.line}`
             );
             item.insertText = id.name;
+            item.range = replaceRange;
             uniqueIds.set(id.name, item);
           }
         });
