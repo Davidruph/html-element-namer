@@ -32,6 +32,30 @@
         "category": "HTML Element Namer"
       }
     ],
+    "configuration": {
+      "title": "HTML Element Namer",
+      "properties": {
+        "html-element-namer.autoGenerate": {
+          "type": "boolean",
+          "default": false,
+          "description": "Automatically insert a unique class/id when an empty class=\"\" or id=\"\" attribute is typed."
+        },
+        "html-element-namer.autoPrefix": {
+          "type": "string",
+          "default": "elem",
+          "description": "Prefix to use for auto-generated class/id names."
+        },
+        "html-element-namer.autoPrefixMode": {
+          "type": "string",
+          "enum": [
+            "fixed",
+            "element"
+          ],
+          "default": "fixed",
+          "description": "How to choose the prefix for auto-generated names. 'fixed' uses autoPrefix. 'element' uses the HTML tag name when available."
+        }
+      }
+    },
     "keybindings": [
       {
         "command": "html-element-namer.generateUniqueName",

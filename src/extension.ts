@@ -74,6 +74,90 @@ async function refreshClassIdScan() {
   vscode.window.showInformationMessage("Workspace scan refreshed");
 }
 
+let hasSeededNames = false;
+let isAutoInsertInProgress = false;
+
+async function seedUsedNamesIfNeeded() {
+  if (hasSeededNames) {
+    return;
+  }
+  const existingItems = await classIdScanner.getClassesAndIds();
+  existingItems.forEach((item) => {
+    nameGenerator.addUsedName(item.name);
+  });
+  hasSeededNames = true;
+}
+
+async function handleAutoInsert(
+  event: vscode.TextDocumentChangeEvent,
+  editor: vscode.TextEditor
+) {
+  const document = event.document;
+  const config = vscode.workspace.getConfiguration("html-element-namer");
+  const autoGenerate = config.get<boolean>("autoGenerate", false);
+  if (!autoGenerate || isAutoInsertInProgress) {
+    return;
+  }
+
+  if (!document.languageId.match(/html|jsx|tsx|vue/)) {
+    return;
+  }
+
+  const autoPrefix = config.get<string>("autoPrefix", "elem") || "elem";
+  const autoPrefixMode = config.get<string>("autoPrefixMode", "fixed");
+  const attributePattern = /(class|id)=(['"])\2/g;
+
+  for (const change of event.contentChanges) {
+    if (!change.text) {
+      continue;
+    }
+
+    const matches: { index: number; attribute: "class" | "id" }[] = [];
+    let match: RegExpExecArray | null;
+    while ((match = attributePattern.exec(change.text)) !== null) {
+      matches.push({
+        index: match.index,
+        attribute: match[1] === "class" ? "class" : "id"
+      });
+    }
+
+    if (!matches.length) {
+      continue;
+    }
+
+    await seedUsedNamesIfNeeded();
+
+    isAutoInsertInProgress = true;
+    await editor.edit((editBuilder) => {
+      for (const item of matches.sort((a, b) => b.index - a.index)) {
+        const insertOffset =
+          document.offsetAt(change.range.start) +
+          item.index +
+          `${item.attribute}=`.length +
+          1;
+        const insertPosition = document.positionAt(insertOffset);
+        const tagPrefix =
+          autoPrefixMode === "element"
+            ? getTagNameBeforePosition(document, insertPosition) || autoPrefix
+            : autoPrefix;
+        const generatedName = nameGenerator.generateUniqueName(tagPrefix);
+        editBuilder.insert(insertPosition, generatedName);
+      }
+    });
+    isAutoInsertInProgress = false;
+  }
+}
+
+function getTagNameBeforePosition(
+  document: vscode.TextDocument,
+  position: vscode.Position
+): string | undefined {
+  const start = new vscode.Position(0, 0);
+  const text = document.getText(new vscode.Range(start, position));
+  const match = /<([a-zA-Z][\w:-]*)[^>]*$/.exec(text);
+  return match?.[1];
+}
+
 export function activate(context: vscode.ExtensionContext) {
   console.log("HTML Element Namer extension activated");
 
@@ -116,9 +200,26 @@ export function activate(context: vscode.ExtensionContext) {
   const watcher = vscode.workspace.createFileSystemWatcher(
     "**/*.{html,jsx,tsx,vue}"
   );
-  watcher.onDidChange(() => classIdScanner.clearCache());
-  watcher.onDidCreate(() => classIdScanner.clearCache());
-  watcher.onDidDelete(() => classIdScanner.clearCache());
+  watcher.onDidChange(() => {
+    classIdScanner.clearCache();
+    hasSeededNames = false;
+  });
+  watcher.onDidCreate(() => {
+    classIdScanner.clearCache();
+    hasSeededNames = false;
+  });
+  watcher.onDidDelete(() => {
+    classIdScanner.clearCache();
+    hasSeededNames = false;
+  });
+
+  const autoInsert = vscode.workspace.onDidChangeTextDocument(async (event) => {
+    const editor = vscode.window.activeTextEditor;
+    if (!editor || editor.document !== event.document) {
+      return;
+    }
+    await handleAutoInsert(event, editor);
+  });
 
   context.subscriptions.push(
     generateClassCommand,
@@ -126,7 +227,8 @@ export function activate(context: vscode.ExtensionContext) {
     cssProvider,
     scssProvider,
     lessProvider,
-    watcher
+    watcher,
+    autoInsert
   );
 }
 
