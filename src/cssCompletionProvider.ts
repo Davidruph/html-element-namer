@@ -50,7 +50,9 @@ export class CSSCompletionProvider implements vscode.CompletionItemProvider {
             item.documentation = new vscode.MarkdownString(
               `**File:** ${cls.file}\n\n**Line:** ${cls.line}`
             );
-            item.insertText = cls.name;
+            item.insertText = new vscode.SnippetString(
+              `${cls.name} {\n\t$0\n}`
+            );
             item.range = replaceRange;
             uniqueClasses.set(cls.name, item);
           }
@@ -72,7 +74,7 @@ export class CSSCompletionProvider implements vscode.CompletionItemProvider {
             item.documentation = new vscode.MarkdownString(
               `**File:** ${id.file}\n\n**Line:** ${id.line}`
             );
-            item.insertText = id.name;
+            item.insertText = new vscode.SnippetString(`${id.name} {\n\t$0\n}`);
             item.range = replaceRange;
             uniqueIds.set(id.name, item);
           }
